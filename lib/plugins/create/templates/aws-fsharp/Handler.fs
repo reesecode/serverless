@@ -1,9 +1,10 @@
 namespace AwsDotnetFsharp
 open Amazon.Lambda.Core
 
-[<assembly:LambdaSerializer(typeof<Amazon.Lambda.Serialization.Json.JsonSerializer>)>]
+[<assembly:LambdaSerializer(typeof<Amazon.Lambda.Serialization.SystemTextJson.DefaultLambdaJsonSerializer>)>]
 do ()
 
+[<CLIMutable>]
 type Request = { Key1 : string; Key2 : string; Key3 : string }
 type Response = { Message : string; Request : Request }
 

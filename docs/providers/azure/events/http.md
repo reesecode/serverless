@@ -7,7 +7,9 @@ layout: Doc
 -->
 
 <!-- DOCS-SITE-LINK:START automatically generated  -->
+
 ### [Read this on the main serverless docs site](https://www.serverless.com/framework/docs/providers/azure/events/http)
+
 <!-- DOCS-SITE-LINK:END -->
 
 # HTTP Trigger
@@ -39,12 +41,11 @@ functions:
     handler: handler.hello
     events:
       - http: true
-        x-azure-settings:
-            name: req #<string>, default - "req", specifies which name it's available on `context.bindings`
-            methods: #<array> [GET, POST, PUT, DELETE], default - all
-                - GET
-            route: example/hello #<string>, default - <function name>
-            authLevel: anonymous #<enum - anonymous|function (default)|admin>
+        name: req #<string>, default - "req", specifies which name is available on `context.bindings`
+        methods: #<array> [GET, POST, PUT, DELETE], default - all
+          - get
+        route: example/hello #<string>, default - <function name>
+        authLevel: anonymous #<enum - anonymous|function (default)|admin>
 ```
 
 URL paths for the serverless functions are prefixed with "api" by default, e.g.
@@ -58,8 +59,8 @@ URL paths for the serverless functions are prefixed with "api" by default, e.g.
 
 module.exports.hello = function(context, req) {
   context.res = {
-      body: "Hello world!"
-  }
+    body: 'Hello world!',
+  };
   context.done();
 };
 ```
@@ -87,18 +88,24 @@ module.exports.hello = function(context, req) {
   const rawBody = req.rawBody; // unparsed body
 
   context.res = {
-      headers:{
-          "content-type":"application/json"
-      },
-      body: {
-          "hello":"world"
-      }
-  }
+    headers: {
+      'content-type': 'application/json',
+    },
+    body: {
+      hello: 'world',
+    },
+  };
   context.done();
 };
 ```
 
-Note, if you specify WebHook, you'll get passed the body as the second argument
+#### Webhook
+
+> NOTE: Webhook is a version 1.x feature. Version 2.x runtime
+> no longer include
+> built-in support for webhook providers.
+
+If you specify WebHook, you'll get passed the body as the second argument
 to your Function, not the request object. You can still access the request object
 on the context object (i.e. `context.req`)
 

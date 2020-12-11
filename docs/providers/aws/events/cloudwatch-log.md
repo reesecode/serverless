@@ -1,20 +1,22 @@
 <!--
 title: Serverless Framework - AWS Lambda Events - CloudWatch Log
 menuText: CloudWatch Log
-menuOrder: 9
+menuOrder: 14
 description:  Setting up AWS CloudWatch Logs with AWS Lambda via the Serverless Framework
 layout: Doc
 -->
 
 <!-- DOCS-SITE-LINK:START automatically generated  -->
+
 ### [Read this on the main serverless docs site](https://www.serverless.com/framework/docs/providers/aws/events/cloudwatch-log)
+
 <!-- DOCS-SITE-LINK:END -->
 
 # CloudWatch Log
 
 ## Simple event definition
 
-This will enable your Lambda function to be called by an Log Stream.
+This will enable your Lambda function to be called by a Log Stream.
 
 ```yml
 functions:
@@ -23,6 +25,8 @@ functions:
     events:
       - cloudwatchLog: '/aws/lambda/hello'
 ```
+
+**WARNING**: If you specify several CloudWatch Log events for one AWS Lambda function you'll only see the first subscription in the AWS Lambda Web console. This is a known AWS problem but it's only graphical, you should be able to view your CloudWatch Log Group subscriptions in the CloudWatch Web console.
 
 ## Specifying a filter
 
@@ -39,16 +43,6 @@ functions:
           logGroup: '/aws/lambda/hello'
           filter: '{$.userIdentity.type = Root}'
 ```
-
-## Current gotchas
-
-There's currently one gotcha you might face if you use this event definition.
-
-The deployment will fail with an error that a resource limit exceeded if you replace the `logGroup` name of one function with the `logGroup` name of another function in your `serverless.yml` file and run `serverless deploy` (see below for an in-depth example).
-
-This is caused by the fact that CloudFormation tries to attach the new subscription filter before detaching the old one. CloudWatch Logs only support one subscription filter per log group as you can read in the documentation about [CloudWatch Logs Limits](http://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/cloudwatch_limits_cwl.html).
-
-Please keep this gotcha in mind when using this event. We will fix it in an upcoming release.
 
 ### Example
 

@@ -1,51 +1,50 @@
-# Release Process
+# Release process
 
-This document contains all the necessary information about out release process.
+## Semi-automation
 
-### Merge freeze
+Serverless Framework relies on [semantic commit messages](https://www.conventionalcommits.org/en/v1.0.0-beta.4/#summary) which allow to streamline the release process (versioning and changelog generation is automated)
 
-A "merge freeze" will be applied a few days before the release. This means that **NOTHING** will be added to the release branch.
+See proposed [Commit Message Guidelines](https://docs.google.com/document/d/1hKUs3qt_aVp_PBI1UqvfaIqKma3jAJimEoGCRGGbOqs/edit#)
 
-A "merge freeze" ends once the release was published.
+In PR's as coming from forks (community contributions) while its welcome, we do not require to follow semantic commit messages. Yet, such PR is expected to be squash merged by project members with a single semantic commit message.
 
-## Different types of releases
+PR's coming from branches have commit messages validated with [commmitlint](https://commitlint.js.org/#/)
 
-**Note:** More about versioning can be found in our dedicated [VERSIONING file](https://github.com/serverless/serverless/blob/master/VERSIONING.md).
+## Release flow
 
-Releases can come in different flavors. Here's a list with the most common release types and how they're treated
+Releases are triggered manually by preparing a release PRs
 
-### Minor / Major release
+#### Preparation steps:
 
-The minor / major release is a planned release which includes all the changes added since the last minor / major release (including bugfixes). The user should pick up the latest minor / major release automatically when installing / updating Serverless.
+1. Create the `release` branch (should derive from the current `master` state)
+2. Bump version ranges of _all_ dependencies to the latest supported versions (e.g. if the latest version of a dependency is `2.3.5` and the range in a `package.json` is `^2.2.4` then it should be updated to `^2.3.5`)  
+   _Note: Unfortunately there seems no reliable utility to automate that (there's a [request at `npm-check-updates`](https://github.com/tjunnone/npm-check-updates/issues/581))  
+   If you handle the installation of dependencies through [npm-cross-link](https://github.com/medikoo/npm-cross-link#npm-cross-link) then [`--bump-deps`](https://github.com/medikoo/npm-cross-link#general-options) option will bump version ranges as expected_
+3. Commit eventual dependency version updates with the following commit message:  
+   `chore: Bump dependencies`
+4. Run `npm run prepare-release` command.  
+   _It'll automatically bump the version in `package.json` to the expected one (by inspecting changes since the previous release) and will generate a new changelog entry._
+5. Improve generated changelog entry in `CHANGELOG.md`:
 
-The minor / major releases is released at a pre-defined time.
+   - Ensure to remove eventual items that were already published with patch releases
+   - Improve formatting and messages if applicable
+   - Ensure that updated `CHANGELOG.md` follows prettier formatting
 
-#### Versioning / tagging
+6. Commit `package.json` and `CHANGELOG.md` changes with the following commit message:
+   `chore: Release`  
+   **Note: For automation purpose, it must be the last commit in the PR**
+7. Push branch upstream and create a PR.
+8. After PR is accepted by CI and one of the reviewers, merge it via _"Rebase and merge"_ option
 
-Assuming our current version is `v1.1.0`.
+_Further actions are automated in CI context:_
 
-The minor release would be `v1.2.0`. The major release would be `v2.0.0`.
+9. _`master` CI build detects that release PR was merged (by fact that it covers change of `version` field in `package.json` file). Having that (after successful tests pass) version tag is created and pushed to the repository._
+10. _Tag CI build publishes a new version to npm, also it retrieves release notes from CHANGELOG.md and publishes them to GitHub._
 
-### Patch release
+### Updating release notes for already published versions
 
-Patch releases should **only** include critical bug fixes and released ASAP. The user should pick up the latest patch release automatically when installing / updating Serverless.
+Improvements to release notes can be done at any time to any already published version:
 
-#### Versioning / tagging
-
-Assuming our current version is `v1.1.0`.
-
-The patch release would be `v1.1.1`.
-
-### Alpha release
-
-Alpha releases are created to have a sneak peek into the upcoming feature set of the new release. They're also used for pre-release QA / internal usage.
-
-Alpha releases are not scheduled and can be pushed multiple times throughout a development phase.
-
-Alpha releases should never be installed automatically when the user installs / updates Serverless. The user should be forced to explicitly name the alpha release during the installation / update phase (e.g. via `npm install --global serverless@alpha`).
-
-#### Versioning / tagging
-
-Assuming our current version is `v1.1.0`.
-
-The alpha releas would be `v1.2.0-alpha.1`. A subsequent alpha release would be `v1.2.0-alpha.2` etc.
+1. Update `CHANGELOG.md` with desired changes (ensure they'd also end in `master`)
+2. Push updated release notes to GitHub by running:  
+   `npx github-release-from-cc-changelog <version>`

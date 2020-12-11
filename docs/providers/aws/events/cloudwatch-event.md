@@ -1,13 +1,15 @@
 <!--
 title: Serverless Framework - AWS Lambda Events - CloudWatch Event
 menuText: CloudWatch Event
-menuOrder: 8
+menuOrder: 13
 description:  Setting up AWS CloudWatch Events with AWS Lambda via the Serverless Framework
 layout: Doc
 -->
 
 <!-- DOCS-SITE-LINK:START automatically generated  -->
+
 ### [Read this on the main serverless docs site](https://www.serverless.com/framework/docs/providers/aws/events/cloudwatch-event)
+
 <!-- DOCS-SITE-LINK:END -->
 
 # CloudWatch Event
@@ -25,9 +27,9 @@ functions:
       - cloudwatchEvent:
           event:
             source:
-              - "aws.ec2"
+              - 'aws.ec2'
             detail-type:
-              - "EC2 Instance State-change Notification"
+              - 'EC2 Instance State-change Notification'
             detail:
               state:
                 - pending
@@ -47,9 +49,9 @@ functions:
       - cloudwatchEvent:
           event:
             source:
-              - "aws.ec2"
+              - 'aws.ec2'
             detail-type:
-              - "EC2 Instance State-change Notification"
+              - 'EC2 Instance State-change Notification'
             detail:
               state:
                 - pending
@@ -68,9 +70,9 @@ functions:
       - cloudwatchEvent:
           event:
             source:
-              - "aws.ec2"
+              - 'aws.ec2'
             detail-type:
-              - "EC2 Instance State-change Notification"
+              - 'EC2 Instance State-change Notification'
             detail:
               state:
                 - pending
@@ -82,13 +84,26 @@ functions:
       - cloudwatchEvent:
           event:
             source:
-              - "aws.ec2"
+              - 'aws.ec2'
             detail-type:
-              - "EC2 Instance State-change Notification"
+              - 'EC2 Instance State-change Notification'
             detail:
               state:
                 - pending
           inputPath: '$.stageVariables'
+      - cloudwatchEvent:
+          event:
+            source:
+              - 'aws.ec2'
+            detail-type:
+              - 'EC2 Instance State-change Notification'
+            detail:
+              state:
+                - pending
+          inputTransformer:
+            inputPathsMap:
+              eventTime: '$.time'
+            inputTemplate: '{"time": <eventTime>, "key1": "value1"}'
 ```
 
 ## Specifying a Description
@@ -104,9 +119,30 @@ functions:
           description: 'CloudWatch Event triggered on EC2 Instance pending state'
           event:
             source:
-              - "aws.ec2"
+              - 'aws.ec2'
             detail-type:
-              - "EC2 Instance State-change Notification"
+              - 'EC2 Instance State-change Notification'
+            detail:
+              state:
+                - pending
+```
+
+## Specifying a Name
+
+You can also specify a CloudWatch Event name. Keep in mind that the name must begin with a letter; contain only ASCII letters, digits, and hyphens; and not end with a hyphen or contain two consecutive hyphens. More information [here](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-name.html).
+
+```yml
+functions:
+  myCloudWatch:
+    handler: myCloudWatch.handler
+    events:
+      - cloudwatchEvent:
+          name: 'my-cloudwatch-event-name'
+          event:
+            source:
+              - 'aws.ec2'
+            detail-type:
+              - 'EC2 Instance State-change Notification'
             detail:
               state:
                 - pending

@@ -1,25 +1,27 @@
 <!--
 title: Serverless Framework - AWS Lambda Guide - Plugins
 menuText: Plugins
-menuOrder: 13
+menuOrder: 14
 description: How to install and create Plugins to extend or overwrite the functionality of the Serverless Framework
 layout: Doc
 -->
 
 <!-- DOCS-SITE-LINK:START automatically generated  -->
+
 ### [Read this on the main serverless docs site](https://www.serverless.com/framework/docs/providers/aws/guide/plugins)
+
 <!-- DOCS-SITE-LINK:END -->
 
 # Plugins
 
-A Plugin is custom Javascript code that creates new or extends existing commands within the Serverless Framework.  The Serverless Framework is merely a group of Plugins that are provided in the core.  If you or your organization have a specific workflow, install a pre-written Plugin or write a plugin to customize the Framework to your needs.  External Plugins are written exactly the same way as the core Plugins.
+A Plugin is custom Javascript code that creates new or extends existing commands within the Serverless Framework. The Serverless Framework is merely a group of Plugins that are provided in the core. If you or your organization have a specific workflow, install a pre-written Plugin or write a plugin to customize the Framework to your needs. External Plugins are written exactly the same way as the core Plugins.
 
 - [How to create serverless plugins - Part 1](https://serverless.com/blog/writing-serverless-plugins/)
 - [How to create serverless plugins - Part 2](https://serverless.com/blog/writing-serverless-plugins-2/)
 
 ## Installing Plugins
 
-External Plugins are added on a per service basis and are not applied globally.  Make sure you are in your Service's root directory, then install the corresponding Plugin with the help of NPM:
+External Plugins are added on a per service basis and are not applied globally. Make sure you are in your Service's root directory, then install the corresponding Plugin with the help of NPM:
 
 ```
 npm install --save custom-serverless-plugin
@@ -34,8 +36,27 @@ plugins:
   - custom-serverless-plugin
 ```
 
-Plugins might want to add extra information which should be accessible to Serverless. The `custom` section in the `serverless.yml` file is the place where you can add necessary
-configurations for your plugins (the plugins author / documentation will tell you if you need to add anything there):
+The `plugins` section supports two formats:
+
+Array object:
+
+```yml
+plugins:
+  - plugin1
+  - plugin2
+```
+
+Enhanced plugins object:
+
+```yml
+plugins:
+  localPath: './custom_serverless_plugins'
+  modules:
+    - plugin1
+    - plugin2
+```
+
+Plugins might want to add extra information which should be accessible to Serverless. The `custom` section in the `serverless.yml` file is the place where you can add necessary configurations for your plugins (the plugins author / documentation will tell you if you need to add anything there):
 
 ```yml
 plugins:
@@ -47,9 +68,35 @@ custom:
 
 ## Service local plugin
 
-If you are working on a plugin or have a plugin that is just designed for one project you can add them to the `.serverless_plugins` directory at the root of your service, and in the `plugins` array in `serverless.yml`.
+If you are working on a plugin or have a plugin that is just designed for one project, it can be loaded from the local `.serverless_plugins` folder at the root of your service. Local plugins can be added in the `plugins` array in `serverless.yml`.
 
-The plugin will be loaded based on being named `custom-serverless-plugin.js` or `custom-serverless-plugin\index.js` in the root of `.serverless_plugins` folder.
+```yml
+plugins:
+  - custom-serverless-plugin
+```
+
+Local plugins folder can be changed by enhancing `plugins` object:
+
+```yml
+plugins:
+  localPath: './custom_serverless_plugins'
+  modules:
+    - custom-serverless-plugin
+```
+
+The `custom-serverless-plugin` will be loaded from the `custom_serverless_plugins` directory at the root of your service. If the `localPath` is not provided or empty, the `.serverless_plugins` directory will be used.
+
+The plugin will be loaded based on being named `custom-serverless-plugin.js` or `custom-serverless-plugin\index.js` in the root of `localPath` folder (`.serverless_plugins` by default).
+
+If you want to load a plugin from a specific directory without affecting other plugins, you can also specify a path relative to the root of your service:
+
+```yaml
+plugins:
+  # This plugin will be loaded from the `.serverless_plugins/` or `node_modules/` directories
+  - custom-serverless-plugin
+  # This plugin will be loaded from the `sub/directory/` directory
+  - ./sub/directory/another-custom-plugin
+```
 
 ### Load Order
 
@@ -71,15 +118,15 @@ In this case `plugin1` is loaded before `plugin2`.
 
 #### Plugin
 
-Code which defines *Commands*, any *Events* within a *Command*, and any *Hooks* assigned to a *Lifecycle Event*.
+Code which defines _Commands_, any _Events_ within a _Command_, and any _Hooks_ assigned to a _Lifecycle Event_.
 
-* Command // CLI configuration, commands, subcommands, options
-  * LifecycleEvent(s) // Events that happen sequentially when the command is run
-    * Hook(s)  // Code that runs when a Lifecycle Event happens during a Command
+- Command // CLI configuration, commands, subcommands, options
+  - LifecycleEvent(s) // Events that happen sequentially when the command is run
+    - Hook(s) // Code that runs when a Lifecycle Event happens during a Command
 
 #### Command
 
-A CLI *Command* that can be called by a user, e.g. `serverless deploy`.  A Command has no logic, but simply defines the CLI configuration (e.g. command, subcommands, parameters) and the *Lifecycle Events* for the command. Every command defines its own lifecycle events.
+A CLI _Command_ that can be called by a user, e.g. `serverless deploy`. A Command has no logic, but simply defines the CLI configuration (e.g. command, subcommands, parameters) and the _Lifecycle Events_ for the command. Every command defines its own lifecycle events.
 
 ```javascript
 'use strict';
@@ -88,10 +135,7 @@ class MyPlugin {
   constructor() {
     this.commands = {
       deploy: {
-        lifecycleEvents: [
-          'resources',
-          'functions'
-        ]
+        lifecycleEvents: ['resources', 'functions'],
       },
     };
   }
@@ -102,7 +146,7 @@ module.exports = MyPlugin;
 
 #### Lifecycle Events
 
-Events that fire sequentially during a Command.  The above example lists two Events.  However, for each Event, an additional `before` and `after` event is created.  Therefore, six Events exist in the above example:
+Events that fire sequentially during a Command. The above example lists two Events. However, for each Event, an additional `before` and `after` event is created. Therefore, six Events exist in the above example:
 
 - `before:deploy:resources`
 - `deploy:resources`
@@ -124,17 +168,14 @@ class Deploy {
   constructor() {
     this.commands = {
       deploy: {
-        lifecycleEvents: [
-          'resources',
-          'functions'
-        ]
+        lifecycleEvents: ['resources', 'functions'],
       },
     };
 
     this.hooks = {
       'before:deploy:resources': this.beforeDeployResources,
       'deploy:resources': this.deployResources,
-      'after:deploy:functions': this.afterDeployFunctions
+      'after:deploy:functions': this.afterDeployFunctions,
     };
   }
 
@@ -154,6 +195,63 @@ class Deploy {
 module.exports = Deploy;
 ```
 
+### Custom Variable Types
+
+As of version 1.52.0 of the Serverless framework, plugins can officially implement their own
+variable types for use in serverless config files.
+
+Example:
+
+```javascript
+'use strict';
+
+class EchoTestVarPlugin {
+  constructor() {
+    getEchoTestValue(src) {
+      return src.slice(5);
+    }
+    getDependentEchoTestValue(src) {
+      return src.slice(5);
+    }
+    this.variableResolvers = {
+      echo: this.getEchoTestValue,
+      // if a variable type depends on profile/stage/region/credentials, to avoid infinite loops in
+      // trying to resolve variables that depend on themselves, specify as such by setting a
+      // dependendServiceName property on the variable getter
+      echoStageDependent: {
+        resolver: this.getDependentEchoTestValue,
+        serviceName: 'echo that isnt prepopulated',
+        isDisabledAtPrepopulation: true
+    };
+  }
+}
+```
+
+The above plugin will add support for variables like `${echo:foobar}` and resolve to the key. EG:
+`${echo:foobar}` will resolve to `'foobar'`.
+
+#### `this.variableResolvers` structure
+
+The data structure of `this.variableResolvers` is an `Object` with keys that are either a
+`function` or `Object`.
+
+The keys are used to generate the regex which matches the variable type. Eg, a key of `test` will
+match variables like `${test:foobar}`.
+
+If the value is a `function` it is used to resolve variables matched. It must be `async` or return
+a `Promise` and accepts the variable string(with prefix but not the wrapping variable syntax,
+eg `test:foobar`) as it's only argument.
+
+If the value is an `Object`, it can have the following keys:
+
+- `resolver` - required, a function, same requirements as described above.
+- `isDisabledAtPrepopulation` - optional, a boolean, disable this variable type when populating
+  stage, region, and credentials. This is important for variable types that depend on AWS or other
+  service that depend on those variables
+- `serviceName` - required if `isDisabledAtPrepopulation === true`, a string to display to users
+  if they try to use the variable type in one of the fields disabled for populating
+  stage/region/credentials.
+
 ### Nesting Commands
 
 You can also nest commands, e.g. if you want to provide a command `serverless deploy function`. Those nested commands have their own lifecycle events and do not inherit them from their parents.
@@ -165,20 +263,14 @@ class MyPlugin {
   constructor() {
     this.commands = {
       deploy: {
-        lifecycleEvents: [
-          'resources',
-          'functions'
-        ],
+        lifecycleEvents: ['resources', 'functions'],
         commands: {
           function: {
-            lifecycleEvents: [
-              'package',
-              'deploy'
-            ],
+            lifecycleEvents: ['package', 'deploy'],
           },
         },
       },
-    }
+    };
   }
 }
 
@@ -195,7 +287,7 @@ Option Shortcuts are passed in with a single dash (`-`) like this: `serverless f
 
 The `options` object will be passed in as the second parameter to the constructor of your plugin.
 
-In it, you can optionally add a `shortcut` property, as well as a `required` property.  The Framework will return an error if a `required` Option is not included. You can also set a `default` property if your option is not required.
+In it, you can optionally add a `shortcut` property, as well as a `required` property. The Framework will return an error if a `required` Option is not included. You can also set a `default` property if your option is not required.
 
 **Note:** At this time, the Serverless Framework does not use parameters.
 
@@ -209,27 +301,25 @@ class Deploy {
 
     this.commands = {
       deploy: {
-        lifecycleEvents: [
-          'functions'
-        ],
+        lifecycleEvents: ['functions'],
         options: {
           function: {
             usage: 'Specify the function you want to deploy (e.g. "--function myFunction")',
             shortcut: 'f',
-            required: true
+            required: true,
           },
           stage: {
             usage: 'Specify the stage you want to deploy to. (e.g. "--stage prod")',
             shortcut: 's',
-            default: 'dev'
-          }
-        }
+            default: 'dev',
+          },
+        },
       },
     };
 
     this.hooks = {
-      'deploy:functions': this.deployFunction.bind(this)
-    }
+      'deploy:functions': this.deployFunction.bind(this),
+    };
   }
 
   deployFunction() {
@@ -261,21 +351,19 @@ class ProviderDeploy {
 
     this.commands = {
       deploy: {
-        lifecycleEvents: [
-          'functions'
-        ],
+        lifecycleEvents: ['functions'],
         options: {
           function: {
             usage: 'Specify the function you want to deploy (e.g. "--function myFunction")',
-            required: true
-          }
-        }
+            required: true,
+          },
+        },
       },
     };
 
     this.hooks = {
-      'deploy:functions': this.deployFunction.bind(this)
-    }
+      'deploy:functions': this.deployFunction.bind(this),
+    };
   }
 
   deployFunction() {
@@ -302,15 +390,13 @@ class MyPlugin {
 
     this.commands = {
       log: {
-        lifecycleEvents: [
-          'serverless'
-        ],
+        lifecycleEvents: ['serverless'],
       },
     };
 
     this.hooks = {
-      'log:serverless': this.logServerless.bind(this)
-    }
+      'log:serverless': this.logServerless.bind(this),
+    };
   }
 
   logServerless() {
@@ -326,6 +412,244 @@ module.exports = MyPlugin;
 ### Command Naming
 
 Command names need to be unique. If we load two commands and both want to specify the same command (e.g. we have an integrated command `deploy` and an external command also wants to use `deploy`) the Serverless CLI will print an error and exit. If you want to have your own `deploy` command you need to name it something different like `myCompanyDeploy` so they don't clash with existing plugins.
+
+### Extending validation schema
+
+If your plugin adds support for additional params in `serverless.yml` file, you should also add validation rules to the Framework's schema. Otherwise, the Framework may place validation errors to command output about your params.
+
+The Framework uses JSON-schema validation backed by [AJV](https://github.com/ajv-validator/ajv). You can extend [initial schema](/lib/configSchema/index.js) inside your plugin constuctor by using `defineCustomProperties`, `defineFunctionEvent`, `defineFunctionEventProperties`, `defineFunctionProperties` or `defineProvider` helpers.
+
+We'll walk though those helpers. You may also want to check out examples from [helpers tests](tests/fixtures/configSchemaExtensions/test-plugin.js)
+
+#### `defineCustomProperties` helper
+
+Let's say your plugin depends on some properties defined in `custom` section of `serverless.yml` file.
+
+```
+// serverless.yml
+
+custom:
+  yourPlugin:
+    someProperty: foobar
+```
+
+To add validation rules to these properties, your plugin would look like this:
+
+```javascript
+class NewEventPlugin {
+  constructor(serverless) {
+    this.serverless = serverless;
+
+    // Create schema for your properties. For reference use https://github.com/ajv-validator/ajv
+    const newCustomPropSchema = {
+      type: 'object',
+      properties: {
+        someProperty: { type: 'string' },
+      },
+      required: ['someProperty'],
+    };
+
+    // Attach your piece of schema to main schema
+    serverless.configSchemaHandler.defineCustomProperties(newCustomPropSchema);
+  }
+}
+```
+
+This way, if user sets `someProperty` by mistake to `false`, the Framework would display an error:
+
+```
+Serverless: Configuration error: custom.yourPlugin.someProperty should be string
+```
+
+#### `defineFunctionEvent` helper
+
+Let's say your plugin adds support to a new `yourPluginEvent` function event. To use this event, a user would need to have `serverless.yml` file like this:
+
+```
+// serverless.yml
+
+functions:
+  someFunc:
+    handler: handler.main
+    events:
+      - yourPluginEvent:
+          someProp: hello
+          anotherProp: 1
+```
+
+In this case your plugin should add validation rules inside your plugin constructor. Otherwise, the Framework would display an error message saying that your event is not supported:
+
+```
+Serverless: Configuration error: Unsupported function event 'yourPluginEvent'
+```
+
+To fix this error and more importantly to provide validation rules for your event, modify your plugin constructor with code like this:
+
+```javascript
+class NewEventPlugin {
+  constructor(serverless) {
+    this.serverless = serverless;
+
+    // Create schema for your properties. For reference use https://github.com/ajv-validator/ajv
+    serverless.configSchemaHandler.defineFunctionEvent('providerName', 'yourPluginEvent', {
+      type: 'object',
+      properties: {
+        someProp: { type: 'string' },
+        anotherProp: { type: 'number' },
+      },
+      required: ['someProp'],
+      additionalProperties: false,
+    });
+  }
+}
+```
+
+This way, if user sets `anotherProp` by mistake to `some-string`, the Framework would display an error:
+
+```
+Serverless: Configuration error: functions.someFunc.events[0].yourPluginEvent.anotherProp should be number
+```
+
+#### `defineFunctionEventProperties` helper
+
+When your plugin extend other plugin events definition for a specific provider, you can use the `defineFunctionEventProperties` to extend event definition with your custom properties.
+
+For exemple, if your plugin adds support to a new `documentation` property on `http` event from `aws` provider, you should add validations rules inside your plugin constructor for this new property.
+
+```javascript
+class NewEventPlugin {
+  constructor(serverless) {
+    this.serverless = serverless;
+
+    // Create schema for your properties. For reference use https://github.com/ajv-validator/ajv
+    serverless.configSchemaHandler.defineFunctionEventProperties('aws', 'http', {
+      properties: {
+        documentation: { type: 'object' },
+      },
+      required: ['documentation'],
+    });
+  }
+}
+```
+
+This way, if user sets `documentation` by mistake to `anyString`, the Framework would display an error:
+
+```
+Serverless: Configuration error: functions.someFunc.events[0].http.documentation should be object
+```
+
+#### `defineFunctionProperties` helper
+
+Let's say your plugin adds support to a new `someProperty` function property. To use this property, a user would need to have `serverless.yml` file like this:
+
+```
+// serverless.yml
+
+functions:
+  someFunc:
+    handler: handler.main
+    someProperty: my-property-value
+```
+
+In this case your plugin should add validation rules inside your plugin constructor. Otherwise, the Framework would display an error message saying that your property is not supported:
+
+```
+ServerlessError: Configuration error:
+at 'functions.someFunc': unrecognized property 'someProperty'
+```
+
+To fix this error and more importantly to provide validation rules for your property, modify your plugin constructor with code like this:
+
+```javascript
+class NewFunctionPropertiesPlugin {
+  constructor(serverless) {
+    this.serverless = serverless;
+
+    // Create schema for your properties. For reference use https://github.com/ajv-validator/ajv
+    serverless.configSchemaHandler.defineFunctionProperties('providerName', {
+      properties: {
+        someProperty: { type: 'string' },
+        anotherProperty: { type: 'number' },
+      },
+      required: ['someProperty'],
+    });
+  }
+}
+```
+
+This way, if user sets `anotherProperty` by mistake to `hello`, the Framework would display an error:
+
+```
+ServerlessError: Configuration error at 'functions.someFunc.anotherProperty': should be number
+```
+
+#### `defineProvider` helper
+
+In case your plugin provides support for new provider, you would want to adjust validation schema. Here is example:
+
+```javascript
+class NewProviderPlugin {
+  constructor(serverless) {
+    this.serverless = serverless;
+
+    // Create schema for your provider. For reference use https://github.com/ajv-validator/ajv
+    serverless.configSchemaHandler.defineProvider('newProvider', {
+      // Eventual reusable schema definitions (will be put to top level "definitions" object)
+      definitions: {
+        // ...
+      },
+
+      // Top level "provider" properties
+      provider: {
+        properties: {
+          stage: { type: 'string' },
+          remoteFunctionData: { type: 'null' },
+        },
+      },
+
+      // Function level properties
+      function: {
+        properties: { handler: { type: 'string' } },
+      },
+
+      // Function events definitions (can be defined here or via `defineFunctionEvent` helper)
+      functionEvents: {
+        someEvent: {
+          name: 'someEvent',
+          schema: {
+            type: 'object',
+            properties: {
+              someRequiredStringProp: { type: 'string' },
+              someNumberProp: { type: 'number' },
+            },
+            required: ['someRequiredStringProp'],
+            additionalProperties: false,
+          },
+        },
+      },
+
+      // Definition for eventual top level "resources" section
+      resources: {
+        type: 'object',
+        properties: {
+          // ...
+        },
+      },
+
+      // Definition for eventual top level "layers" section
+      layers: {
+        type: 'object',
+        additionalProperties: {
+          type: 'object',
+          properties: {
+            // ...
+          },
+        },
+      },
+    });
+  }
+}
+```
 
 ### Extending the `info` command
 

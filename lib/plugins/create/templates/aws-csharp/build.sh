@@ -1,10 +1,12 @@
 #!/bin/bash
 
-#install zip
-apt-get -qq update
-apt-get -qq -y install zip
+#install zip on debian OS, since microsoft/dotnet container doesn't have zip by default
+if [ -f /etc/debian_version ]
+then
+  apt -qq update
+  apt -qq -y install zip
+fi
 
 dotnet restore
-
-#create deployment package
-dotnet lambda package --configuration release --framework netcoreapp1.0 --output-package bin/release/netcoreapp1.0/deploy-package.zip
+dotnet tool install -g Amazon.Lambda.Tools --framework netcoreapp3.1
+dotnet lambda package --configuration Release --framework netcoreapp3.1 --output-package bin/Release/netcoreapp3.1/hello.zip
